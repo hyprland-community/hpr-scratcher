@@ -4,6 +4,8 @@
 pip install hpr-scratcher
 ```
 
+*OR*
+
 - copy and rename the `__init__.py` file to some accessible path, do not forget to add +x to it
 # Usage
 
@@ -38,3 +40,8 @@ Then in $HOME/.config/hypr/scratchpads.json add:
 ```
 
 And you'll be able to toggle pavucontrol with MOD + V.
+
+# TODO
+
+- Allow auto-hide when the focus is lost
+- Better handling of fast repetitions
