@@ -5,8 +5,7 @@ import json
 import sys
 import os
 
-DEBUG=0
-from pprint import pprint
+DEBUG = False
 
 MARGIN = 60  # TODO take it from JSON config
 EVENTS = f'/tmp/hypr/{ os.environ["HYPRLAND_INSTANCE_SIGNATURE"] }/.socket2.sock'
@@ -16,13 +15,19 @@ CONFIG_FILE = "~/.config/hypr/scratchpads.json"
 
 
 def hyprctlJSON(command):
-    if DEBUG: print(command)
+    if DEBUG:
+        print(command)
     return json.loads(subprocess.getoutput(f"hyprctl -j {command}"))
 
 
 def hyprctl(command):
-    if DEBUG: print(command)
-    subprocess.call(["hyprctl", "dispatch", command], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if DEBUG:
+        print(command)
+    subprocess.call(
+        ["hyprctl", "dispatch", command],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
 
 
 def get_focused_monitor():
@@ -70,24 +75,23 @@ class ScratchpadManager:
 
     def load_clients(self):
         self.procs = {
-                name: subprocess.Popen(
-                    scratch.conf["command"],
-                    stdin=subprocess.DEVNULL,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    shell=True,
-                )
-                for name, scratch in self.scratches.items()
-            }
+            name: subprocess.Popen(
+                scratch.conf["command"],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                shell=True,
+            )
+            for name, scratch in self.scratches.items()
+        }
 
     async def event_openwindow(self, params):
-        addr,wrkspc,kls,title = params.split(',', 3)
+        addr, wrkspc, kls, title = params.split(",", 3)
         if wrkspc == "special":
             item = self.scratches_by_class.get(kls)
             if item and item.just_created:
                 await self.run_hide(item.uid, force=True)
                 item.just_created = False
-
 
     async def event_activewindowv2(self, params):
         pass
@@ -159,7 +163,7 @@ class ScratchpadManager:
 
         client_width = client["size"][0]
         margin_x = int((mon_width - client_width) / 2) + mon_x
-        wrkspc = monitor['activeWorkspace']['id']
+        wrkspc = monitor["activeWorkspace"]["id"]
         hyprctl(f"movetoworkspace {wrkspc},^({kls})$")
         hyprctl(f"pin ^({kls})$")
         hyprctl(f"movewindowpixel exact {margin_x} {mon_y + MARGIN},^({kls})$")
@@ -221,7 +225,7 @@ async def run_daemon():
     events_reader, events_writer = await asyncio.open_unix_connection(EVENTS)
     manager.event_reader = events_reader
 
-    manager.load_clients() # ensure sockets are connected first
+    manager.load_clients()  # ensure sockets are connected first
 
     try:
         await manager.run()
@@ -256,11 +260,13 @@ If arguments are ommited, runs the daemon which will start every configured comm
     writer.close()
     await writer.wait_closed()
 
+
 def main():
     try:
         asyncio.run(run_daemon() if len(sys.argv) <= 1 else run_client())
     except KeyboardInterrupt:
         pass
+
 
 if __name__ == "__main__":
     main()
