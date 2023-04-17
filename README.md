@@ -1,3 +1,10 @@
+# Installation
+
+```
+pip install hpr-scratcher
+```
+
+- copy and rename the `__init__.py` file to some accessible path, do not forget to add +x to it
 # Usage
 
 In your `hyprland.conf` add something like this:
