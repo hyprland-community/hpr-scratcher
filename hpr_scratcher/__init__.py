@@ -5,6 +5,7 @@ import json
 import sys
 import os
 
+DEBUG=0
 from pprint import pprint
 
 MARGIN = 60  # TODO take it from JSON config
@@ -15,11 +16,13 @@ CONFIG_FILE = "~/.config/hypr/scratchpads.json"
 
 
 def hyprctlJSON(command):
+    if DEBUG: print(command)
     return json.loads(subprocess.getoutput(f"hyprctl -j {command}"))
 
 
 def hyprctl(command):
-    subprocess.call(["hyprctl", "dispatch", command])
+    if DEBUG: print(command)
+    subprocess.call(["hyprctl", "dispatch", command], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def get_focused_monitor():
@@ -48,16 +51,25 @@ class ScratchpadManager:
     stopped = False
 
     def __init__(self):
+        self.procs = {}
+        self.scratches = {}
+        self.load_config()
+
+    def load_config(self, reload=False):
         config = json.loads(
             open(os.path.expanduser(CONFIG_FILE), encoding="utf-8").read()
         )
+        old_scratches = self.scratches
         self.scratches = {k: Scratch(k, v) for k, v in config.items()}
         self.scratches_by_class = {v["class"]: Scratch(k, v) for k, v in config.items()}
-        self.procs = {}
+        if reload:
+            for k in self.scratches:
+                self.scratches[k].just_created = False
+                if old_scratches.get(k):
+                    self.scratches[k].visible = old_scratches[k].visible
 
     def load_clients(self):
-        self.procs.update(
-            {
+        self.procs = {
                 name: subprocess.Popen(
                     scratch.conf["command"],
                     stdin=subprocess.DEVNULL,
@@ -67,7 +79,6 @@ class ScratchpadManager:
                 )
                 for name, scratch in self.scratches.items()
             }
-        )
 
     async def event_openwindow(self, params):
         addr,wrkspc,kls,title = params.split(',', 3)
@@ -90,6 +101,9 @@ class ScratchpadManager:
             item.just_created = False
 
     # command handlers
+
+    async def run_reload(self):
+        self.load_config(reload=True)
 
     async def run_toggle(self, uid):
         uid = uid.strip()
@@ -207,7 +221,7 @@ async def run_daemon():
     events_reader, events_writer = await asyncio.open_unix_connection(EVENTS)
     manager.event_reader = events_reader
 
-    manager.load_clients()
+    manager.load_clients() # ensure sockets are connected first
 
     try:
         await manager.run()
@@ -226,8 +240,9 @@ async def run_client():
     if sys.argv[1] == "--help":
         print(
             """Commands:
-  show <scratchpad name>
-  hide <scratchpad name>
+  show   <scratchpad name>
+  hide   <scratchpad name>
+  toggle <scratchpad name>
 
 
 If arguments are ommited, runs the daemon which will start every configured command.
