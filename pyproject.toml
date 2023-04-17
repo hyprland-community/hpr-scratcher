@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "hpr-scratcher"
+version = "0.1.0"
+description = "A scratchpad manager for hyprland"
+authors = ["fdev31 <fdev31@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "hpr_scratcher"}]
+
+[tool.poetry.scripts]
+hpr-scratcher = "hpr_scratcher:main"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
