@@ -85,6 +85,8 @@ class ScratchpadManager:
             for name, scratch in self.scratches.items()
         }
 
+    # event handlers:
+
     async def event_openwindow(self, params):
         addr, wrkspc, kls, title = params.split(",", 3)
         if wrkspc == "special":
@@ -96,9 +98,9 @@ class ScratchpadManager:
     async def event_activewindowv2(self, params):
         pass
 
-    # event handlers:
     async def event_activewindow(self, params):
         klass, _ = params.rstrip().split(",", 1)
+        print(_)
         item = self.scratches_by_class.get(klass)
         if item and item.just_created:
             await self.run_hide(item.uid)
@@ -171,7 +173,7 @@ class ScratchpadManager:
 
     # Async loops & handlers (dispatchers):
 
-    async def read_events(self):
+    async def read_events_loop(self):
         while not self.stopped:
             data = (await self.event_reader.readline()).decode()
             if not data:
@@ -184,7 +186,7 @@ class ScratchpadManager:
             else:
                 print("unknown event:", cmd, "///", params)
 
-    async def read_commands(self, reader, writer):
+    async def read_command(self, reader, writer):
         data = (await reader.readline()).decode()
         if not data:
             print("Server starved")
@@ -215,13 +217,13 @@ class ScratchpadManager:
     async def run(self):
         await asyncio.gather(
             asyncio.create_task(self.serve()),
-            asyncio.create_task(self.read_events()),
+            asyncio.create_task(self.read_events_loop()),
         )
 
 
 async def run_daemon():
     manager = ScratchpadManager()
-    manager.server = await asyncio.start_unix_server(manager.read_commands, CONTROL)
+    manager.server = await asyncio.start_unix_server(manager.read_command, CONTROL)
     events_reader, events_writer = await asyncio.open_unix_connection(EVENTS)
     manager.event_reader = events_reader
 
