@@ -100,7 +100,6 @@ class ScratchpadManager:
 
     async def event_activewindow(self, params):
         klass, _ = params.rstrip().split(",", 1)
-        print(_)
         item = self.scratches_by_class.get(klass)
         if item and item.just_created:
             await self.run_hide(item.uid)
