@@ -106,6 +106,7 @@ allow to hide the window when the focus is lost when set to "hide"
 
 # TODO
 
+- Make the margin/padding configurable per app
 - Add some period of grace after a dropdown is shown, so the window can't be closed by unfocus in the fist X seconds
 - Better handling of fast repetitions
 - Allow different "poles" for scratchpads instead of always sliding from the top
