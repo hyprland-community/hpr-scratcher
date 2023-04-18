@@ -90,6 +90,21 @@ class ScratchpadManager:
 
     # event handlers:
 
+    async def event_fullscreen(self, params):
+        pass
+
+    async def event_workspace(self, params):
+        pass
+
+    async def event_destroyworkspace(self, params):
+        pass
+
+    async def event_createworkspace(self, params):
+        pass
+
+    async def event_focusedmon(self, params):
+        pass
+
     async def event_openwindow(self, params):
         addr, wrkspc, kls, title = params.split(",", 3)
         if wrkspc == "special":
