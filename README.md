@@ -97,7 +97,7 @@ allow to hide the window when the focus is lost when set to "hide"
 
 # 0.2.0
 
-- reload command
+- add a "reload" command re-reading the configuration
 - allow automatic hiding on focus
 
 # 0.1.0
