@@ -40,11 +40,13 @@ Then in $HOME/.config/hypr/scratchpads.json add:
     "command": "kitty --class kitty-dropterm",
     "class": "kitty-dropterm",
     "offset": 800,
+    "animation": "fromTop",
     "unfocus": "hide"
   },
   "volume": {
     "command": "pavucontrol",
     "class": "pavucontrol",
+    "animation": "fromTop",
     "offset": 1200
   }
 }
@@ -52,8 +54,55 @@ Then in $HOME/.config/hypr/scratchpads.json add:
 
 And you'll be able to toggle pavucontrol with MOD + V.
 
+## Options
+
+### animation
+
+Type of animation to use
+
+- `null` / `""`
+- `"fromTop"`
+
+_TODO_:
+
+- `fromBottom`
+- `fromLeft`
+- `fromRight`
+
+### offset
+
+number of pixels for the animation.
+
+### class
+
+class of the created window
+
+### unfocus
+
+allow to hide the window when the focus is lost when set to "hide"
+
+# Changelog
+
+# 0.3.0 (WIP)
+
+- add animation (only "fromTop" now, but can be switched off)
+- pid used in most commands (more reliable)
+- FIX: stop pinning the windows
+- FIX: debug traces
+- FIX: close processes on exit (should be configurable ?)
+
+# 0.2.0
+
+- reload command
+- allow automatic hiding on focus
+
+# 0.1.0
+
+- first version, close to no options
+
 # TODO
 
+- Add some period of grace after a dropdown is shown, so the window can't be closed by unfocus in the fist X seconds
 - Better handling of fast repetitions
 - Allow different "poles" for scratchpads instead of always sliding from the top
 - Make the usage of an explicit offset not needed
