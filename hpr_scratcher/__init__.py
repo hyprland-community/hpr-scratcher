@@ -194,10 +194,10 @@ class ScratchpadManager:
             full_name = f"event_{cmd}"
             if hasattr(self, full_name):
                 if DEBUG:
-                    print("EVT", full_name, params)
+                    print(f"EVT {full_name}({params.strip()})")
                 await getattr(self, full_name)(params)
             else:
-                print("unknown event:", cmd, "///", params)
+                print(f"unknown event: {cmd} ({params.strip()})")
 
     async def read_command(self, reader, writer):
         data = (await reader.readline()).decode()
