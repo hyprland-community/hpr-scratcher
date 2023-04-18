@@ -220,14 +220,22 @@ class ScratchpadManager:
         full_name = f"run_{cmd}"
         if hasattr(self, full_name):
             if DEBUG:
-                print("CMD:", full_name, args)
+                print(f"CMD: {full_name}({args})")
             await getattr(self, full_name)(*args)
         else:
             print("Unknown command:", cmd)
 
     async def serve(self):
-        async with self.server:
-            await self.server.serve_forever()
+        try:
+            async with self.server:
+                await self.server.serve_forever()
+        finally:
+            for scratch in self.scratches:
+                proc = self.procs[scratch]
+                proc.terminate()
+                await asyncio.sleep(0.1)
+                proc.kill()
+                proc.wait()
 
     async def run(self):
         await asyncio.gather(
