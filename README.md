@@ -83,7 +83,11 @@ allow to hide the window when the focus is lost when set to "hide"
 
 # Changelog
 
-# 0.3.0 (WIP)
+# WIP
+
+- Nothing yet
+
+# 0.3.0
 
 - add animation (only "fromTop" now, but can be switched off)
 - pid used in most commands (more reliable)
