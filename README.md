@@ -8,6 +8,11 @@ _OR_
 
 - copy and rename the `__init__.py` file to some accessible path, do not forget to add +x to it
 
+# Features
+
+- Allow showing & hiding sliding scratchpads
+- Allow auto-hide when the focus is lost
+
 # Usage
 
 In your `hyprland.conf` add something like this:
@@ -34,13 +39,13 @@ Then in $HOME/.config/hypr/scratchpads.json add:
   "term": {
     "command": "kitty --class kitty-dropterm",
     "class": "kitty-dropterm",
-    "offset": 800
+    "offset": 800,
+    "unfocus": "hide"
   },
   "volume": {
     "command": "pavucontrol",
     "class": "pavucontrol",
-    "offset": 1200,
-    "unfocus": "TODO: hide"
+    "offset": 1200
   }
 }
 ```
@@ -49,5 +54,10 @@ And you'll be able to toggle pavucontrol with MOD + V.
 
 # TODO
 
-- Allow auto-hide when the focus is lost
 - Better handling of fast repetitions
+- Allow different "poles" for scratchpads instead of always sliding from the top
+- Make the usage of an explicit offset not needed
+- study avoiding the usage of classes to track the windows (once registered)
+- Allow auto-restart of applications (if closed)
+  - Allow closing the app on unfocus
+- Move to socket instead of hyprctl when possible

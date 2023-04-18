@@ -5,7 +5,7 @@ import json
 import sys
 import os
 
-DEBUG = False
+DEBUG = os.environ.get("DEBUG", False)
 
 MARGIN = 60  # TODO take it from JSON config
 EVENTS = f'/tmp/hypr/{ os.environ["HYPRLAND_INSTANCE_SIGNATURE"] }/.socket2.sock'
@@ -101,9 +101,14 @@ class ScratchpadManager:
     async def event_activewindow(self, params):
         klass, _ = params.rstrip().split(",", 1)
         item = self.scratches_by_class.get(klass)
-        if item and item.just_created:
-            await self.run_hide(item.uid)
-            item.just_created = False
+        if item:
+            if item.just_created:
+                await self.run_hide(item.uid)
+                item.just_created = False
+        else:
+            for uid, scratch in self.scratches.items():
+                if scratch.visible and scratch.conf.get("unfocus") == "hide":
+                    await self.run_hide(uid)
 
     # command handlers
 
@@ -181,6 +186,8 @@ class ScratchpadManager:
             cmd, params = data.split(">>")
             full_name = f"event_{cmd}"
             if hasattr(self, full_name):
+                if DEBUG:
+                    print("EVT", full_name, params)
                 await getattr(self, full_name)(params)
             else:
                 print("unknown event:", cmd, "///", params)
@@ -205,6 +212,8 @@ class ScratchpadManager:
             args = args[1:]
         full_name = f"run_{cmd}"
         if hasattr(self, full_name):
+            if DEBUG:
+                print("CMD:", full_name, args)
             await getattr(self, full_name)(*args)
         else:
             print("Unknown command:", cmd)
