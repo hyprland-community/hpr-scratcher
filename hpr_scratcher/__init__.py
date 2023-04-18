@@ -45,6 +45,7 @@ def get_client_by_class(name):
 class Scratch:
     def __init__(self, uid, opts):
         self.uid = uid
+        self.pid = 0
         self.conf = opts
         self.visible = False
         self.just_created = True
@@ -84,6 +85,8 @@ class ScratchpadManager:
             )
             for name, scratch in self.scratches.items()
         }
+        for name, proc in self.procs.items():
+            self.scratches[name].pid = proc.pid
 
     # event handlers:
 
@@ -136,10 +139,12 @@ class ScratchpadManager:
             print(f"{uid} is already hidden")
             return
         item.visible = False
-        kls = item.conf["class"]
-        hyprctl(f"movewindowpixel 0 -{item.conf['offset']},^({kls})$")
-        await asyncio.sleep(0.2)
-        hyprctl(f"movetoworkspacesilent special,^({kls})$")
+        pid = "pid:%d" % item.pid
+        if item.conf.get("animation"):
+            # TODO: handle different directions
+            hyprctl(f"movewindowpixel 0 -{item.conf['offset']},{pid}")
+            await asyncio.sleep(0.2)
+        hyprctl(f"movetoworkspacesilent special,{pid}")
 
     async def run_show(self, uid, force=False):
         uid = uid.strip()
@@ -156,24 +161,26 @@ class ScratchpadManager:
         item.visible = True
         monitor = get_focused_monitor()
         assert monitor
-        kls = item.conf["class"]
-        client = get_client_by_class(kls)
+        client = get_client_by_class(item.conf["class"])
         assert client
         mon_x = monitor["x"]
         mon_y = monitor["y"]
         mon_width = monitor["width"]
 
         offset = client["at"][1]
-        if offset > -1:
-            print(f"Huhu, didn't expect this! offset={offset}")
+        if offset > -1 and DEBUG:
+            print(f"....didn't expect this! offset={offset}")
+
+        pid = "pid:%d" % item.pid
 
         client_width = client["size"][0]
         margin_x = int((mon_width - client_width) / 2) + mon_x
         wrkspc = monitor["activeWorkspace"]["id"]
-        hyprctl(f"movetoworkspace {wrkspc},^({kls})$")
-        hyprctl(f"pin ^({kls})$")
-        hyprctl(f"movewindowpixel exact {margin_x} {mon_y + MARGIN},^({kls})$")
-        hyprctl(f"focuswindow ^({kls})$")
+        hyprctl(f"movetoworkspacesilent {wrkspc},{pid}")
+        if item.conf.get("animation"):
+            # TODO: handle directions
+            hyprctl(f"movewindowpixel exact {margin_x} {mon_y + MARGIN},{pid}")
+        hyprctl(f"focuswindow {pid}")
 
     # Async loops & handlers (dispatchers):
 
