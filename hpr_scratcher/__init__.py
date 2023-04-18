@@ -90,6 +90,9 @@ class ScratchpadManager:
 
     # event handlers:
 
+    async def event_closewindow(self, params):  # winid
+        pass
+
     async def event_fullscreen(self, params):
         pass
 
@@ -105,6 +108,9 @@ class ScratchpadManager:
     async def event_focusedmon(self, params):
         pass
 
+    async def event_activewindowv2(self, params):
+        pass
+
     async def event_openwindow(self, params):
         addr, wrkspc, kls, title = params.split(",", 3)
         if wrkspc == "special":
@@ -112,9 +118,6 @@ class ScratchpadManager:
             if item and item.just_created:
                 await self.run_hide(item.uid, force=True)
                 item.just_created = False
-
-    async def event_activewindowv2(self, params):
-        pass
 
     async def event_activewindow(self, params):
         klass, _ = params.rstrip().split(",", 1)
