@@ -182,8 +182,8 @@ class ScratchpadManager:
             return
         item.visible = False
         pid = "pid:%d" % item.pid
-        if item.conf.get("animation"):
-            # TODO: handle different directions
+        animation_type = item.conf.get("animation")
+        if animation_type:
             offset = item.conf.get("offset")
             if offset is None:
                 if "size" not in item.clientInfo:
@@ -193,7 +193,15 @@ class ScratchpadManager:
 
                 offset = int(1.3 * item.clientInfo["size"][1])
 
-            hyprctl(f"movewindowpixel 0 -{offset},{pid}")
+            if animation_type == "fromTop":
+                hyprctl(f"movewindowpixel 0 -{offset},{pid}")
+            elif animation_type == "fromBottom":
+                hyprctl(f"movewindowpixel 0 {offset},{pid}")
+            elif animation_type == "fromLeft":
+                hyprctl(f"movewindowpixel -{offset} 0,{pid}")
+            elif animation_type == "fromRight":
+                hyprctl(f"movewindowpixel {offset} 0,{pid}")
+
             if uid in self.transitioning_scratches:
                 return  # abort sequence
             await asyncio.sleep(0.2)
@@ -201,13 +209,51 @@ class ScratchpadManager:
             hyprctl(f"movetoworkspacesilent special,{pid}")
 
     def _animation_fromTop(self, monitor, client, client_uid, margin):
-        mon_x = int(monitor["x"])
-        mon_y = int(monitor["y"])
+        mon_x = monitor["x"]
+        mon_y = monitor["y"]
         mon_width = monitor["width"]
 
         client_width = client["size"][0]
         margin_x = int((mon_width - client_width) / 2) + mon_x
         hyprctl(f"movewindowpixel exact {margin_x} {mon_y + margin},{client_uid}")
+
+    def _animation_fromBottom(self, monitor, client, client_uid, margin):
+        mon_x = monitor["x"]
+        mon_y = monitor["y"]
+        mon_width = monitor["width"]
+        mon_height = monitor["height"]
+
+        client_width = client["size"][0]
+        client_height = client["size"][1]
+        margin_x = int((mon_width - client_width) / 2) + mon_x
+        hyprctl(
+            f"movewindowpixel exact {margin_x} {mon_y + mon_height - client_height - margin},{client_uid}"
+        )
+
+    def _animation_fromLeft(self, monitor, client, client_uid, margin):
+        mon_x = monitor["x"]
+        mon_y = monitor["y"]
+        mon_width = monitor["width"]
+        mon_height = monitor["height"]
+
+        client_width = client["size"][0]
+        client_height = client["size"][1]
+        margin_y = int((mon_height - client_height) / 2) + mon_y
+
+        hyprctl(f"movewindowpixel exact {margin} {margin_y},{client_uid}")
+
+    def _animation_fromRight(self, monitor, client, client_uid, margin):
+        mon_x = monitor["x"]
+        mon_y = monitor["y"]
+        mon_width = monitor["width"]
+        mon_height = monitor["height"]
+
+        client_width = client["size"][0]
+        client_height = client["size"][1]
+        margin_y = int((mon_height - client_height) / 2) + mon_y
+        hyprctl(
+            f"movewindowpixel exact {mon_width - client_width - margin} {margin_y},{client_uid}"
+        )
 
     async def run_show(self, uid, force=False):
         uid = uid.strip()

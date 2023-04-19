@@ -15,6 +15,11 @@ _OR_
 
 # Usage
 
+As an example, defining two scratchpads:
+
+- _term_ which would be a kitty terminal on upper part of the screen
+- _volume_ which would be a pavucontrol window on the right part of the screen
+
 In your `hyprland.conf` add something like this:
 
 ```ini
@@ -47,7 +52,7 @@ Then in $HOME/.config/hypr/scratchpads.json add:
   "volume": {
     "command": "pavucontrol",
     "class": "pavucontrol",
-    "animation": "fromTop"
+    "animation": "fromRight"
   }
 }
 ```
@@ -60,14 +65,11 @@ And you'll be able to toggle pavucontrol with MOD + V.
 
 Type of animation to use
 
-- `null` / `""`
-- `"fromTop"`
-
-_TODO_:
-
-- `fromBottom`
-- `fromLeft`
-- `fromRight`
+- `null` / `""` / not defined
+- "fromTop"
+- "fromBottom"
+- "fromLeft"
+- "fromRight"
 
 ### offset (optional)
 
@@ -86,6 +88,14 @@ allow to hide the window when the focus is lost when set to "hide"
 number of pixels for the margin
 
 # Changelog
+
+# 0.5.0 (WIP)
+
+- windows can slide from any direction now (values for "animation" property):
+  - `fromTop`
+  - `fromBottom`
+  - `fromLeft`
+  - `fromRight`
 
 # 0.4.0
 
@@ -113,7 +123,6 @@ number of pixels for the margin
 
 # TODO
 
-- Allow different "poles" for scratchpads instead of always sliding from the top
 - Allow auto-restart of applications (if closed)
   - Allow closing the app on unfocus
 - Move to socket instead of hyprctl when possible
