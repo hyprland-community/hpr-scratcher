@@ -1,6 +1,7 @@
 #!/bin/env python
 import subprocess
 import asyncio
+import time
 import json
 import sys
 import os
@@ -68,7 +69,12 @@ class ScratchpadManager:
         self.procs = {}
         self.scratches = {}
         self.transitioning_scratches = set()
+        self.startedAt = time.time()
         self.load_config()
+
+    @property
+    def is_starting(self):
+        return time.time() - self.startedAt < 10
 
     def load_config(self):
         config = json.loads(
@@ -89,7 +95,6 @@ class ScratchpadManager:
                 if name not in scratches:
                     del self.scratches[name]
 
-        self.scratches_by_class = {s.conf["class"]: s for s in self.scratches.values()}
         self.scratches_by_address = {}  # not known yet
 
     def load_clients(self):
@@ -103,8 +108,10 @@ class ScratchpadManager:
             )
             for name, scratch in self.scratches.items()
         }
+        self.scratches_by_pid = {}
         for name, proc in self.procs.items():
             self.scratches[name].pid = proc.pid
+            self.scratches_by_pid[proc.pid] = self.scratches[name]
 
     # event handlers:
 
@@ -163,11 +170,9 @@ class ScratchpadManager:
         addr, wrkspc, kls, title = params.split(",", 3)
         if wrkspc == "special":
             item = self.scratches_by_address.get(addr)
-            if not item:
-                candidate = self.scratches_by_class.get(kls)
-                if candidate:
-                    self.updateScratch(candidate)
-                    item = self.scratches_by_address.get(addr)
+            if not item and self.is_starting:
+                self.updateScratchInfo()
+                item = self.scratches_by_address.get(addr)
             if item and item.just_created:
                 await self.run_hide(item.uid, force=True)
                 item.just_created = False
@@ -191,13 +196,22 @@ class ScratchpadManager:
         else:
             await self.run_show(uid)
 
-    def updateScratch(self, scratch: Scratch):
-        add_to_address_book = ("address" not in scratch.clientInfo) or (
-            scratch.clientInfo["address"] not in self.scratches_by_address
-        )
-        scratch.updateClientInfo()
-        if add_to_address_book:
-            self.scratches_by_address[scratch.clientInfo["address"][2:]] = scratch
+    def updateScratchInfo(self, scratch: Scratch | None = None):
+        if scratch is None:
+            for client in hyprctlJSON("clients"):
+                scratch = self.scratches_by_pid.get(client["pid"])
+                if scratch:
+                    scratch.updateClientInfo(client)
+                    self.scratches_by_address[
+                        scratch.clientInfo["address"][2:]
+                    ] = scratch
+        else:
+            add_to_address_book = ("address" not in scratch.clientInfo) or (
+                scratch.clientInfo["address"] not in self.scratches_by_address
+            )
+            scratch.updateClientInfo()
+            if add_to_address_book:
+                self.scratches_by_address[scratch.clientInfo["address"][2:]] = scratch
 
     async def run_hide(self, uid: str, force=False):
         uid = uid.strip()
@@ -215,7 +229,7 @@ class ScratchpadManager:
             offset = item.conf.get("offset")
             if offset is None:
                 if "size" not in item.clientInfo:
-                    self.updateScratch(item)
+                    self.updateScratchInfo(item)
 
                 offset = int(1.3 * item.clientInfo["size"][1])
 
@@ -293,7 +307,7 @@ class ScratchpadManager:
         monitor = get_focused_monitor_props()
         assert monitor
 
-        self.updateScratch(item)
+        self.updateScratchInfo(item)
 
         pid = "pid:%d" % item.pid
 
