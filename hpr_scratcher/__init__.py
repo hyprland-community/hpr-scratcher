@@ -320,11 +320,11 @@ async def run_daemon():
         print("Interrupted")
     except asyncio.CancelledError:
         print("Bye!")
-
-    events_writer.close()
-    await events_writer.wait_closed()
-    manager.server.close()
-    await manager.server.wait_closed()
+    finally:
+        events_writer.close()
+        await events_writer.wait_closed()
+        manager.server.close()
+        await manager.server.wait_closed()
 
 
 async def run_client():
