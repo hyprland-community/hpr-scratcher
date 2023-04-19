@@ -87,7 +87,7 @@ number of pixels for the margin
 
 # Changelog
 
-# WIP
+# 0.4.0
 
 - the offset is now optional
 - the margin can be configured now
