@@ -59,7 +59,16 @@ Then in $HOME/.config/hypr/scratchpads.json add:
 
 And you'll be able to toggle pavucontrol with MOD + V.
 
-## Options
+## Command-line options
+
+- `reload` : reloads the configuration file
+- `toggle <scratchpad name>` : toggle the given scratchpad
+- `show <scratchpad name>` : show the given scratchpad
+- `hide <scratchpad name>` : hide the given scratchpad
+
+Note: with no argument it runs the daemon (doesn't fork in the background)
+
+## Scratchpad Options
 
 ### animation
 
@@ -96,6 +105,7 @@ number of pixels for the margin
   - `fromBottom`
   - `fromLeft`
   - `fromRight`
+- FIX: code reloading
 
 # 0.4.0
 

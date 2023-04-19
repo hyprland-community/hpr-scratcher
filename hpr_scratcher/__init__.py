@@ -50,6 +50,7 @@ class Scratch:
         self.visible = False
         self.just_created = True
         self.clientInfo = {}
+        self.scratches = {}
 
 
 class ScratchpadManager:
@@ -63,18 +64,26 @@ class ScratchpadManager:
         self.transitioning_scratches = set()
         self.load_config()
 
-    def load_config(self, reload=False):
+    def load_config(self):
         config = json.loads(
             open(os.path.expanduser(CONFIG_FILE), encoding="utf-8").read()
         )
-        old_scratches = self.scratches
-        self.scratches = {k: Scratch(k, v) for k, v in config.items()}
-        self.scratches_by_class = {v["class"]: Scratch(k, v) for k, v in config.items()}
-        if reload:
-            for k in self.scratches:
-                self.scratches[k].just_created = False
-                if old_scratches.get(k):
-                    self.scratches[k].visible = old_scratches[k].visible
+        scratches = {k: Scratch(k, v) for k, v in config.items()}
+
+        is_updating = not bool(self.scratches)
+
+        for name in scratches:
+            if name not in self.scratches:
+                self.scratches[name] = scratches[name]
+            else:
+                self.scratches[name].conf = scratches[name].conf
+
+        if is_updating:
+            for name in self.scratches:
+                if name not in scratches:
+                    del self.scratches[name]
+
+        self.scratches_by_class = {s.conf["class"]: s for s in self.scratches.values()}
 
     def load_clients(self):
         self.procs = {
@@ -158,7 +167,7 @@ class ScratchpadManager:
     # command handlers
 
     async def run_reload(self):
-        self.load_config(reload=True)
+        self.load_config()
 
     async def run_toggle(self, uid):
         uid = uid.strip()
@@ -377,10 +386,10 @@ async def run_client():
     if sys.argv[1] == "--help":
         print(
             """Commands:
+  reload
   show   <scratchpad name>
   hide   <scratchpad name>
   toggle <scratchpad name>
-
 
 If arguments are ommited, runs the daemon which will start every configured command.
 """
