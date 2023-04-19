@@ -195,7 +195,7 @@ class ScratchpadManager:
                 await self.run_hide(item.uid, force=True)
                 item.just_created = False
 
-    async def event_activewindow(self, params):
+    async def event_activewindow(self, params):  # XXX: do not use
         return
 
     # command handlers
