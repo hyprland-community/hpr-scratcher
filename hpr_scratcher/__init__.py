@@ -240,19 +240,15 @@ class ScratchpadManager:
         )
 
     def _animation_fromLeft(self, monitor, client, client_uid, margin):
-        mon_x = monitor["x"]
         mon_y = monitor["y"]
-        mon_width = monitor["width"]
         mon_height = monitor["height"]
 
-        client_width = client["size"][0]
         client_height = client["size"][1]
         margin_y = int((mon_height - client_height) / 2) + mon_y
 
         hyprctl(f"movewindowpixel exact {margin} {margin_y},{client_uid}")
 
     def _animation_fromRight(self, monitor, client, client_uid, margin):
-        mon_x = monitor["x"]
         mon_y = monitor["y"]
         mon_width = monitor["width"]
         mon_height = monitor["height"]
