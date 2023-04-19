@@ -44,7 +44,7 @@ Then in $HOME/.config/hypr/scratchpads.json add:
 ```json
 {
   "term": {
-    "command": "kitty",
+    "command": "kitty --class kitty-dropterm",
     "animation": "fromTop",
     "margin": 50,
     "unfocus": "hide"
