@@ -91,6 +91,24 @@ class ScratchpadManager:
 
     # event handlers:
 
+    async def event_moveworkspace(self, params):
+        pass
+
+    async def event_openlayer(self, params):
+        pass
+
+    async def event_closelayer(self, params):
+        pass
+
+    async def event_changefloatingmode(self, params):
+        pass
+
+    async def event_activelayout(self, params):
+        pass
+
+    async def event_urgent(self, params):
+        pass
+
     async def event_closewindow(self, params):  # winid
         pass
 
