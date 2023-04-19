@@ -44,16 +44,13 @@ Then in $HOME/.config/hypr/scratchpads.json add:
 ```json
 {
   "term": {
-    "command": "kitty --class kitty-dropterm",
-    "class": "kitty-dropterm",
-    "offset": 800,
+    "command": "kitty",
     "animation": "fromTop",
     "margin": 50,
     "unfocus": "hide"
   },
   "volume": {
     "command": "pavucontrol",
-    "class": "pavucontrol",
     "animation": "fromRight"
   }
 }
@@ -86,10 +83,6 @@ Type of animation to use
 
 number of pixels for the animation.
 
-### class
-
-class of the created window
-
 ### unfocus (optional)
 
 allow to hide the window when the focus is lost when set to "hide"
@@ -107,6 +100,7 @@ number of pixels for the margin
   - `fromBottom`
   - `fromLeft`
   - `fromRight`
+- make "class" option obsolete
 - FIX: code reloading
 - FIX: misc improvements
 
