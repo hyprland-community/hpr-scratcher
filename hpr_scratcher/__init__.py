@@ -53,6 +53,10 @@ class Scratch:
         self.clientInfo = {}
         self.scratches = {}
 
+    @property
+    def address(self):
+        return self.clientInfo.get("address", "")[2:]
+
     def updateClientInfo(self, clientInfo=None):
         if clientInfo is None:
             clientInfo = get_client_props_by_pid(self.pid)
@@ -153,6 +157,7 @@ class ScratchpadManager:
         pass
 
     async def event_activewindowv2(self, addr):
+        addr = addr.strip()
         scratch = self.scratches_by_address.get(addr)
         if scratch:
             if scratch.just_created:
@@ -160,12 +165,13 @@ class ScratchpadManager:
                 scratch.just_created = False
         else:
             for uid, scratch in self.scratches.items():
-                if (
-                    scratch.visible
-                    and scratch.conf.get("unfocus") == "hide"
-                    and scratch.uid not in self.transitioning_scratches
-                ):
-                    await self.run_hide(uid)
+                if scratch.clientInfo and scratch.address != addr:
+                    if (
+                        scratch.visible
+                        and scratch.conf.get("unfocus") == "hide"
+                        and scratch.uid not in self.transitioning_scratches
+                    ):
+                        await self.run_hide(uid)
 
     async def event_openwindow(self, params):
         addr, wrkspc, kls, title = params.split(",", 3)
@@ -208,7 +214,7 @@ class ScratchpadManager:
                     ] = scratch
         else:
             add_to_address_book = ("address" not in scratch.clientInfo) or (
-                scratch.clientInfo["address"] not in self.scratches_by_address
+                scratch.address not in self.scratches_by_address
             )
             scratch.updateClientInfo()
             if add_to_address_book:
