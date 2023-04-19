@@ -95,7 +95,9 @@ class ScratchpadManager:
                 if name not in scratches:
                     del self.scratches[name]
 
-        self.scratches_by_address = {}  # not known yet
+        # not known yet
+        self.scratches_by_address = {}
+        self.scratches_by_pid = {}
 
     def load_clients(self):
         self.procs = {
@@ -108,7 +110,6 @@ class ScratchpadManager:
             )
             for name, scratch in self.scratches.items()
         }
-        self.scratches_by_pid = {}
         for name, proc in self.procs.items():
             self.scratches[name].pid = proc.pid
             self.scratches_by_pid[proc.pid] = self.scratches[name]
