@@ -234,8 +234,9 @@ class ScratchpadManager:
         self.transitioning_scratches.add(uid)
         hyprctl(f"movetoworkspacesilent {wrkspc},{pid}")
         if item.conf.get("animation"):
+            margin = item.conf.get("margin", MARGIN)
             # TODO: handle directions
-            hyprctl(f"movewindowpixel exact {margin_x} {mon_y + MARGIN},{pid}")
+            hyprctl(f"movewindowpixel exact {margin_x} {mon_y + margin},{pid}")
         hyprctl(f"focuswindow {pid}")
         await asyncio.sleep(0.2)
         self.transitioning_scratches.discard(uid)

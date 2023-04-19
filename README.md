@@ -41,6 +41,7 @@ Then in $HOME/.config/hypr/scratchpads.json add:
     "class": "kitty-dropterm",
     "offset": 800,
     "animation": "fromTop",
+    "margin": 50,
     "unfocus": "hide"
   },
   "volume": {
@@ -80,11 +81,17 @@ class of the created window
 
 allow to hide the window when the focus is lost when set to "hide"
 
+### margin (optional)
+
+number of pixels for the margin
+
 # Changelog
 
 # WIP
 
-- offset is now optional
+- the offset is now optional
+- the margin can be configured now
+- FIX: fast repetition of show/hide sequences
 - FIX: automatic hide on focus lost doesn't trigger before the window takes the focus
 
 # 0.3.0
@@ -106,7 +113,6 @@ allow to hide the window when the focus is lost when set to "hide"
 
 # TODO
 
-- Make the margin/padding configurable per app
 - Allow different "poles" for scratchpads instead of always sliding from the top
 - Allow auto-restart of applications (if closed)
   - Allow closing the app on unfocus
