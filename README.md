@@ -93,7 +93,7 @@ number of pixels for the margin
 
 # Changelog
 
-# 0.5.0 (WIP)
+# 0.5.0
 
 - windows can slide from any direction now (values for "animation" property):
   - `fromTop`
