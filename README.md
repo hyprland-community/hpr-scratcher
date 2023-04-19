@@ -69,6 +69,11 @@ Note: with no argument it runs the daemon (doesn't fork in the background)
 
 ## Scratchpad Options
 
+### command
+
+This is the command you wish to run in the scratchpad.
+For a nice startup you need to be able to identify this window in `hyprland.conf`, using `--class` is often a good idea.
+
 ### animation
 
 Type of animation to use
