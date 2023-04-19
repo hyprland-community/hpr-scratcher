@@ -30,13 +30,13 @@ def hyprctl(command):
     )
 
 
-def get_focused_monitor():
+def get_focused_monitor_props():
     for monitor in hyprctlJSON("monitors"):
         if monitor.get("focused") == True:
             return monitor
 
 
-def get_client_by_class(name):
+def get_client_props_by_class(name):
     for client in hyprctlJSON("clients"):
         if client.get("class") == name:
             return client
@@ -187,7 +187,7 @@ class ScratchpadManager:
             offset = item.conf.get("offset")
             if offset is None:
                 if "size" not in item.clientInfo:
-                    client = get_client_by_class(item.conf["class"])
+                    client = get_client_props_by_class(item.conf["class"])
                     assert client
                     item.clientInfo.update(client)
 
@@ -199,6 +199,15 @@ class ScratchpadManager:
             await asyncio.sleep(0.2)
         if uid not in self.transitioning_scratches:
             hyprctl(f"movetoworkspacesilent special,{pid}")
+
+    def _animation_fromTop(self, monitor, client, client_uid, margin):
+        mon_x = int(monitor["x"])
+        mon_y = int(monitor["y"])
+        mon_width = monitor["width"]
+
+        client_width = client["size"][0]
+        margin_x = int((mon_width - client_width) / 2) + mon_x
+        hyprctl(f"movewindowpixel exact {margin_x} {mon_y + margin},{client_uid}")
 
     async def run_show(self, uid, force=False):
         uid = uid.strip()
@@ -213,30 +222,24 @@ class ScratchpadManager:
             return
 
         item.visible = True
-        monitor = get_focused_monitor()
+        monitor = get_focused_monitor_props()
         assert monitor
-        client = get_client_by_class(item.conf["class"])
+        client = get_client_props_by_class(item.conf["class"])
         assert client
         item.clientInfo.update(client)
-        mon_x = monitor["x"]
-        mon_y = monitor["y"]
-        mon_width = monitor["width"]
-
-        offset = client["at"][1]
-        if offset > -1 and DEBUG:
-            print(f"....didn't expect this! offset={offset}")
 
         pid = "pid:%d" % item.pid
 
-        client_width = client["size"][0]
-        margin_x = int((mon_width - client_width) / 2) + mon_x
+        animation_type = item.conf.get("animation")
+
         wrkspc = monitor["activeWorkspace"]["id"]
         self.transitioning_scratches.add(uid)
         hyprctl(f"movetoworkspacesilent {wrkspc},{pid}")
-        if item.conf.get("animation"):
+        if animation_type:
             margin = item.conf.get("margin", MARGIN)
-            # TODO: handle directions
-            hyprctl(f"movewindowpixel exact {margin_x} {mon_y + margin},{pid}")
+            fn = getattr(self, "_animation_%s" % animation_type)
+            fn(monitor, client, pid, margin)
+
         hyprctl(f"focuswindow {pid}")
         await asyncio.sleep(0.2)
         self.transitioning_scratches.discard(uid)
