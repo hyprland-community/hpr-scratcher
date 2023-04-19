@@ -108,6 +108,7 @@ number of pixels for the margin
   - `fromLeft`
   - `fromRight`
 - FIX: code reloading
+- FIX: misc improvements
 
 # 0.4.0
 
