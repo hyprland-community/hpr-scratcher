@@ -93,6 +93,10 @@ number of pixels for the margin
 
 # Changelog
 
+# WIP
+
+- animation names are case-insensitive now
+
 # 0.5.0
 
 - windows can slide from any direction now (values for "animation" property):

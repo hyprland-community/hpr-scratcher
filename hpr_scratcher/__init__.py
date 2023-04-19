@@ -231,7 +231,7 @@ class ScratchpadManager:
             return
         item.visible = False
         pid = "pid:%d" % item.pid
-        animation_type = item.conf.get("animation")
+        animation_type = item.conf.get("animation", "").lower()
         if animation_type:
             offset = item.conf.get("offset")
             if offset is None:
@@ -240,13 +240,13 @@ class ScratchpadManager:
 
                 offset = int(1.3 * item.clientInfo["size"][1])
 
-            if animation_type == "fromTop":
+            if animation_type == "fromtop":
                 hyprctl(f"movewindowpixel 0 -{offset},{pid}")
-            elif animation_type == "fromBottom":
+            elif animation_type == "frombottom":
                 hyprctl(f"movewindowpixel 0 {offset},{pid}")
-            elif animation_type == "fromLeft":
+            elif animation_type == "fromleft":
                 hyprctl(f"movewindowpixel -{offset} 0,{pid}")
-            elif animation_type == "fromRight":
+            elif animation_type == "fromright":
                 hyprctl(f"movewindowpixel {offset} 0,{pid}")
 
             if uid in self.transitioning_scratches:
@@ -255,7 +255,7 @@ class ScratchpadManager:
         if uid not in self.transitioning_scratches:
             hyprctl(f"movetoworkspacesilent special,{pid}")
 
-    def _animation_fromTop(self, monitor, client, client_uid, margin):
+    def _animation_fromtop(self, monitor, client, client_uid, margin):
         mon_x = monitor["x"]
         mon_y = monitor["y"]
         mon_width = monitor["width"]
@@ -264,7 +264,7 @@ class ScratchpadManager:
         margin_x = int((mon_width - client_width) / 2) + mon_x
         hyprctl(f"movewindowpixel exact {margin_x} {mon_y + margin},{client_uid}")
 
-    def _animation_fromBottom(self, monitor, client, client_uid, margin):
+    def _animation_frombottom(self, monitor, client, client_uid, margin):
         mon_x = monitor["x"]
         mon_y = monitor["y"]
         mon_width = monitor["width"]
@@ -277,7 +277,7 @@ class ScratchpadManager:
             f"movewindowpixel exact {margin_x} {mon_y + mon_height - client_height - margin},{client_uid}"
         )
 
-    def _animation_fromLeft(self, monitor, client, client_uid, margin):
+    def _animation_fromleft(self, monitor, client, client_uid, margin):
         mon_y = monitor["y"]
         mon_height = monitor["height"]
 
@@ -286,7 +286,7 @@ class ScratchpadManager:
 
         hyprctl(f"movewindowpixel exact {margin} {margin_y},{client_uid}")
 
-    def _animation_fromRight(self, monitor, client, client_uid, margin):
+    def _animation_fromright(self, monitor, client, client_uid, margin):
         mon_y = monitor["y"]
         mon_width = monitor["width"]
         mon_height = monitor["height"]
@@ -318,7 +318,7 @@ class ScratchpadManager:
 
         pid = "pid:%d" % item.pid
 
-        animation_type = item.conf.get("animation")
+        animation_type = item.conf.get("animation", "").lower()
 
         wrkspc = monitor["activeWorkspace"]["id"]
         self.transitioning_scratches.add(uid)
