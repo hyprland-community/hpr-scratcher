@@ -9,36 +9,47 @@ import os
 DEBUG = os.environ.get("DEBUG", False)
 
 MARGIN = 60  # TODO take it from JSON config
+HYPRCTL = f'/tmp/hypr/{ os.environ["HYPRLAND_INSTANCE_SIGNATURE"] }/.socket.sock'
 EVENTS = f'/tmp/hypr/{ os.environ["HYPRLAND_INSTANCE_SIGNATURE"] }/.socket2.sock'
 CONTROL = f'/tmp/hypr/{ os.environ["HYPRLAND_INSTANCE_SIGNATURE"] }/.scratchpads.sock'
 
 CONFIG_FILE = "~/.config/hypr/scratchpads.json"
 
 
-def hyprctlJSON(command):
+async def hyprctlJSON(command):
     if DEBUG:
         print("(JS)>>>", command)
-    return json.loads(subprocess.getoutput(f"hyprctl -j {command}"))
+    ctl_reader, ctl_writer = await asyncio.open_unix_connection(HYPRCTL)
+    ctl_writer.write(f"-j/{command}".encode())
+    await ctl_writer.drain()
+    resp = await ctl_reader.read()
+    ctl_writer.close()
+    await ctl_writer.wait_closed()
+    return json.loads(resp)
 
 
-def hyprctl(command):
+async def hyprctl(command):
     if DEBUG:
         print(">>>", command)
-    subprocess.call(
-        ["hyprctl", "dispatch", command],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    ctl_reader, ctl_writer = await asyncio.open_unix_connection(HYPRCTL)
+    ctl_writer.write(f"/dispatch {command}".encode())
+    await ctl_writer.drain()
+    resp = await ctl_reader.read(100)
+    ctl_writer.close()
+    await ctl_writer.wait_closed()
+    if DEBUG:
+        print("<<<", resp)
+    return resp == b"ok"
 
 
-def get_focused_monitor_props():
-    for monitor in hyprctlJSON("monitors"):
+async def get_focused_monitor_props():
+    for monitor in await hyprctlJSON("monitors"):
         if monitor.get("focused") == True:
             return monitor
 
 
-def get_client_props_by_pid(pid: int):
-    for client in hyprctlJSON("clients"):
+async def get_client_props_by_pid(pid: int):
+    for client in await hyprctlJSON("clients"):
         if client.get("pid") == pid:
             return client
 
@@ -57,9 +68,9 @@ class Scratch:
     def address(self):
         return self.clientInfo.get("address", "")[2:]
 
-    def updateClientInfo(self, clientInfo=None):
+    async def updateClientInfo(self, clientInfo=None):
         if clientInfo is None:
-            clientInfo = get_client_props_by_pid(self.pid)
+            clientInfo = await get_client_props_by_pid(self.pid)
         assert clientInfo
         self.clientInfo.update(clientInfo)
 
@@ -178,7 +189,7 @@ class ScratchpadManager:
         if wrkspc == "special":
             item = self.scratches_by_address.get(addr)
             if not item and self.is_starting:
-                self.updateScratchInfo()
+                await self.updateScratchInfo()
                 item = self.scratches_by_address.get(addr)
             if item and item.just_created:
                 await self.run_hide(item.uid, force=True)
@@ -203,12 +214,12 @@ class ScratchpadManager:
         else:
             await self.run_show(uid)
 
-    def updateScratchInfo(self, scratch: Scratch | None = None):
+    async def updateScratchInfo(self, scratch: Scratch | None = None):
         if scratch is None:
-            for client in hyprctlJSON("clients"):
+            for client in await hyprctlJSON("clients"):
                 scratch = self.scratches_by_pid.get(client["pid"])
                 if scratch:
-                    scratch.updateClientInfo(client)
+                    await scratch.updateClientInfo(client)
                     self.scratches_by_address[
                         scratch.clientInfo["address"][2:]
                     ] = scratch
@@ -216,7 +227,7 @@ class ScratchpadManager:
             add_to_address_book = ("address" not in scratch.clientInfo) or (
                 scratch.address not in self.scratches_by_address
             )
-            scratch.updateClientInfo()
+            await scratch.updateClientInfo()
             if add_to_address_book:
                 self.scratches_by_address[scratch.clientInfo["address"][2:]] = scratch
 
@@ -236,35 +247,35 @@ class ScratchpadManager:
             offset = item.conf.get("offset")
             if offset is None:
                 if "size" not in item.clientInfo:
-                    self.updateScratchInfo(item)
+                    await self.updateScratchInfo(item)
 
                 offset = int(1.3 * item.clientInfo["size"][1])
 
             if animation_type == "fromtop":
-                hyprctl(f"movewindowpixel 0 -{offset},{pid}")
+                await hyprctl(f"movewindowpixel 0 -{offset},{pid}")
             elif animation_type == "frombottom":
-                hyprctl(f"movewindowpixel 0 {offset},{pid}")
+                await hyprctl(f"movewindowpixel 0 {offset},{pid}")
             elif animation_type == "fromleft":
-                hyprctl(f"movewindowpixel -{offset} 0,{pid}")
+                await hyprctl(f"movewindowpixel -{offset} 0,{pid}")
             elif animation_type == "fromright":
-                hyprctl(f"movewindowpixel {offset} 0,{pid}")
+                await hyprctl(f"movewindowpixel {offset} 0,{pid}")
 
             if uid in self.transitioning_scratches:
                 return  # abort sequence
             await asyncio.sleep(0.2)
         if uid not in self.transitioning_scratches:
-            hyprctl(f"movetoworkspacesilent special,{pid}")
+            await hyprctl(f"movetoworkspacesilent special,{pid}")
 
-    def _animation_fromtop(self, monitor, client, client_uid, margin):
+    async def _animation_fromtop(self, monitor, client, client_uid, margin):
         mon_x = monitor["x"]
         mon_y = monitor["y"]
         mon_width = monitor["width"]
 
         client_width = client["size"][0]
         margin_x = int((mon_width - client_width) / 2) + mon_x
-        hyprctl(f"movewindowpixel exact {margin_x} {mon_y + margin},{client_uid}")
+        await hyprctl(f"movewindowpixel exact {margin_x} {mon_y + margin},{client_uid}")
 
-    def _animation_frombottom(self, monitor, client, client_uid, margin):
+    async def _animation_frombottom(self, monitor, client, client_uid, margin):
         mon_x = monitor["x"]
         mon_y = monitor["y"]
         mon_width = monitor["width"]
@@ -273,20 +284,20 @@ class ScratchpadManager:
         client_width = client["size"][0]
         client_height = client["size"][1]
         margin_x = int((mon_width - client_width) / 2) + mon_x
-        hyprctl(
+        await hyprctl(
             f"movewindowpixel exact {margin_x} {mon_y + mon_height - client_height - margin},{client_uid}"
         )
 
-    def _animation_fromleft(self, monitor, client, client_uid, margin):
+    async def _animation_fromleft(self, monitor, client, client_uid, margin):
         mon_y = monitor["y"]
         mon_height = monitor["height"]
 
         client_height = client["size"][1]
         margin_y = int((mon_height - client_height) / 2) + mon_y
 
-        hyprctl(f"movewindowpixel exact {margin} {margin_y},{client_uid}")
+        await hyprctl(f"movewindowpixel exact {margin} {margin_y},{client_uid}")
 
-    def _animation_fromright(self, monitor, client, client_uid, margin):
+    async def _animation_fromright(self, monitor, client, client_uid, margin):
         mon_y = monitor["y"]
         mon_width = monitor["width"]
         mon_height = monitor["height"]
@@ -294,7 +305,7 @@ class ScratchpadManager:
         client_width = client["size"][0]
         client_height = client["size"][1]
         margin_y = int((mon_height - client_height) / 2) + mon_y
-        hyprctl(
+        await hyprctl(
             f"movewindowpixel exact {mon_width - client_width - margin} {margin_y},{client_uid}"
         )
 
@@ -311,10 +322,10 @@ class ScratchpadManager:
             return
 
         item.visible = True
-        monitor = get_focused_monitor_props()
+        monitor = await get_focused_monitor_props()
         assert monitor
 
-        self.updateScratchInfo(item)
+        await self.updateScratchInfo(item)
 
         pid = "pid:%d" % item.pid
 
@@ -322,15 +333,15 @@ class ScratchpadManager:
 
         wrkspc = monitor["activeWorkspace"]["id"]
         self.transitioning_scratches.add(uid)
-        hyprctl(f"movetoworkspacesilent {wrkspc},{pid}")
+        await hyprctl(f"movetoworkspacesilent {wrkspc},{pid}")
         if animation_type:
             margin = item.conf.get("margin", MARGIN)
             fn = getattr(self, "_animation_%s" % animation_type)
-            fn(monitor, item.clientInfo, pid, margin)
+            await fn(monitor, item.clientInfo, pid, margin)
 
         # FIXME: pin doesn't always work
-        # hyprctl(f"pin {pid}")
-        hyprctl(f"focuswindow {pid}")
+        # await hyprctl(f"pin {pid}")
+        await hyprctl(f"focuswindow {pid}")
         await asyncio.sleep(0.2)
         self.transitioning_scratches.discard(uid)
 
