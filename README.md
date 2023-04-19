@@ -12,6 +12,8 @@ _OR_
 
 - Allow showing & hiding sliding scratchpads
 - Allow auto-hide when the focus is lost
+- Supports optional animation from top, bottom, left or right
+- Reload config without restart
 
 # Usage
 

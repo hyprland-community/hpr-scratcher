@@ -36,9 +36,9 @@ def get_focused_monitor_props():
             return monitor
 
 
-def get_client_props_by_class(name):
+def get_client_props_by_pid(pid: int):
     for client in hyprctlJSON("clients"):
-        if client.get("class") == name:
+        if client.get("pid") == pid:
             return client
 
 
@@ -196,7 +196,7 @@ class ScratchpadManager:
             offset = item.conf.get("offset")
             if offset is None:
                 if "size" not in item.clientInfo:
-                    client = get_client_props_by_class(item.conf["class"])
+                    client = get_client_props_by_pid(item.pid)
                     assert client
                     item.clientInfo.update(client)
 
@@ -279,7 +279,7 @@ class ScratchpadManager:
         item.visible = True
         monitor = get_focused_monitor_props()
         assert monitor
-        client = get_client_props_by_class(item.conf["class"])
+        client = get_client_props_by_pid(item.pid)
         assert client
         item.clientInfo.update(client)
 
