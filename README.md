@@ -85,7 +85,7 @@ allow to hide the window when the focus is lost when set to "hide"
 
 # WIP
 
-- Nothing yet
+- FIX: automatic hide on focus lost doesn't trigger before the window takes the focus
 
 # 0.3.0
 
@@ -107,11 +107,9 @@ allow to hide the window when the focus is lost when set to "hide"
 # TODO
 
 - Make the margin/padding configurable per app
-- Add some period of grace after a dropdown is shown, so the window can't be closed by any mouse movement during the "show" animation
 - Better handling of fast repetitions
 - Allow different "poles" for scratchpads instead of always sliding from the top
 - Make the usage of an explicit offset not needed
-- study avoiding the usage of classes to track the windows (once registered)
 - Allow auto-restart of applications (if closed)
   - Allow closing the app on unfocus
 - Move to socket instead of hyprctl when possible

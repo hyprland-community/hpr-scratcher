@@ -59,6 +59,7 @@ class ScratchpadManager:
     def __init__(self):
         self.procs = {}
         self.scratches = {}
+        self.transitioning_scratches = set()
         self.load_config()
 
     def load_config(self, reload=False):
@@ -128,7 +129,11 @@ class ScratchpadManager:
                 item.just_created = False
         else:
             for uid, scratch in self.scratches.items():
-                if scratch.visible and scratch.conf.get("unfocus") == "hide":
+                if (
+                    scratch.visible
+                    and scratch.conf.get("unfocus") == "hide"
+                    and scratch.uid not in self.transitioning_scratches
+                ):
                     await self.run_hide(uid)
 
     # command handlers
@@ -194,11 +199,14 @@ class ScratchpadManager:
         client_width = client["size"][0]
         margin_x = int((mon_width - client_width) / 2) + mon_x
         wrkspc = monitor["activeWorkspace"]["id"]
+        self.transitioning_scratches.add(uid)
         hyprctl(f"movetoworkspacesilent {wrkspc},{pid}")
         if item.conf.get("animation"):
             # TODO: handle directions
             hyprctl(f"movewindowpixel exact {margin_x} {mon_y + MARGIN},{pid}")
         hyprctl(f"focuswindow {pid}")
+        await asyncio.sleep(0.2)
+        self.transitioning_scratches.discard(uid)
 
     # Async loops & handlers (dispatchers):
 
