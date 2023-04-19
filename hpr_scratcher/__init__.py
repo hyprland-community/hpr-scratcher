@@ -16,13 +16,13 @@ CONFIG_FILE = "~/.config/hypr/scratchpads.json"
 
 def hyprctlJSON(command):
     if DEBUG:
-        print(command)
+        print("(JS)>>>", command)
     return json.loads(subprocess.getoutput(f"hyprctl -j {command}"))
 
 
 def hyprctl(command):
     if DEBUG:
-        print(command)
+        print(">>>", command)
     subprocess.call(
         ["hyprctl", "dispatch", command],
         stdout=subprocess.DEVNULL,
@@ -51,6 +51,12 @@ class Scratch:
         self.just_created = True
         self.clientInfo = {}
         self.scratches = {}
+
+    def updateClientInfo(self, clientInfo=None):
+        if clientInfo is None:
+            clientInfo = get_client_props_by_pid(self.pid)
+        assert clientInfo
+        self.clientInfo.update(clientInfo)
 
 
 class ScratchpadManager:
@@ -84,6 +90,7 @@ class ScratchpadManager:
                     del self.scratches[name]
 
         self.scratches_by_class = {s.conf["class"]: s for s in self.scratches.values()}
+        self.scratches_by_address = {}  # not known yet
 
     def load_clients(self):
         self.procs = {
@@ -137,24 +144,12 @@ class ScratchpadManager:
     async def event_focusedmon(self, params):
         pass
 
-    async def event_activewindowv2(self, params):
-        pass
-
-    async def event_openwindow(self, params):
-        addr, wrkspc, kls, title = params.split(",", 3)
-        if wrkspc == "special":
-            item = self.scratches_by_class.get(kls)
-            if item and item.just_created:
-                await self.run_hide(item.uid, force=True)
-                item.just_created = False
-
-    async def event_activewindow(self, params):
-        klass, _ = params.rstrip().split(",", 1)
-        item = self.scratches_by_class.get(klass)
-        if item:
-            if item.just_created:
-                await self.run_hide(item.uid)
-                item.just_created = False
+    async def event_activewindowv2(self, addr):
+        scratch = self.scratches_by_address.get(addr)
+        if scratch:
+            if scratch.just_created:
+                await self.run_hide(scratch.uid, force=True)
+                scratch.just_created = False
         else:
             for uid, scratch in self.scratches.items():
                 if (
@@ -164,12 +159,28 @@ class ScratchpadManager:
                 ):
                     await self.run_hide(uid)
 
+    async def event_openwindow(self, params):
+        addr, wrkspc, kls, title = params.split(",", 3)
+        if wrkspc == "special":
+            item = self.scratches_by_address.get(addr)
+            if not item:
+                candidate = self.scratches_by_class.get(kls)
+                if candidate:
+                    self.updateScratch(candidate)
+                    item = self.scratches_by_address.get(addr)
+            if item and item.just_created:
+                await self.run_hide(item.uid, force=True)
+                item.just_created = False
+
+    async def event_activewindow(self, params):
+        return
+
     # command handlers
 
     async def run_reload(self):
         self.load_config()
 
-    async def run_toggle(self, uid):
+    async def run_toggle(self, uid: str):
         uid = uid.strip()
         item = self.scratches.get(uid)
         if not item:
@@ -180,7 +191,15 @@ class ScratchpadManager:
         else:
             await self.run_show(uid)
 
-    async def run_hide(self, uid, force=False):
+    def updateScratch(self, scratch: Scratch):
+        add_to_address_book = ("address" not in scratch.clientInfo) or (
+            scratch.clientInfo["address"] not in self.scratches_by_address
+        )
+        scratch.updateClientInfo()
+        if add_to_address_book:
+            self.scratches_by_address[scratch.clientInfo["address"][2:]] = scratch
+
+    async def run_hide(self, uid: str, force=False):
         uid = uid.strip()
         item = self.scratches.get(uid)
         if not item:
@@ -196,9 +215,7 @@ class ScratchpadManager:
             offset = item.conf.get("offset")
             if offset is None:
                 if "size" not in item.clientInfo:
-                    client = get_client_props_by_pid(item.pid)
-                    assert client
-                    item.clientInfo.update(client)
+                    self.updateScratch(item)
 
                 offset = int(1.3 * item.clientInfo["size"][1])
 
@@ -275,9 +292,8 @@ class ScratchpadManager:
         item.visible = True
         monitor = get_focused_monitor_props()
         assert monitor
-        client = get_client_props_by_pid(item.pid)
-        assert client
-        item.clientInfo.update(client)
+
+        self.updateScratch(item)
 
         pid = "pid:%d" % item.pid
 
@@ -289,7 +305,7 @@ class ScratchpadManager:
         if animation_type:
             margin = item.conf.get("margin", MARGIN)
             fn = getattr(self, "_animation_%s" % animation_type)
-            fn(monitor, client, pid, margin)
+            fn(monitor, item.clientInfo, pid, margin)
 
         hyprctl(f"focuswindow {pid}")
         await asyncio.sleep(0.2)
