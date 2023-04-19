@@ -46,8 +46,7 @@ Then in $HOME/.config/hypr/scratchpads.json add:
   "volume": {
     "command": "pavucontrol",
     "class": "pavucontrol",
-    "animation": "fromTop",
-    "offset": 1200
+    "animation": "fromTop"
   }
 }
 ```
@@ -69,7 +68,7 @@ _TODO_:
 - `fromLeft`
 - `fromRight`
 
-### offset
+### offset (optional)
 
 number of pixels for the animation.
 
@@ -77,7 +76,7 @@ number of pixels for the animation.
 
 class of the created window
 
-### unfocus
+### unfocus (optional)
 
 allow to hide the window when the focus is lost when set to "hide"
 
@@ -85,6 +84,7 @@ allow to hide the window when the focus is lost when set to "hide"
 
 # WIP
 
+- offset is now optional
 - FIX: automatic hide on focus lost doesn't trigger before the window takes the focus
 
 # 0.3.0
@@ -109,7 +109,6 @@ allow to hide the window when the focus is lost when set to "hide"
 - Make the margin/padding configurable per app
 - Better handling of fast repetitions
 - Allow different "poles" for scratchpads instead of always sliding from the top
-- Make the usage of an explicit offset not needed
 - Allow auto-restart of applications (if closed)
   - Allow closing the app on unfocus
 - Move to socket instead of hyprctl when possible

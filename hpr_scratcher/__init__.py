@@ -49,6 +49,7 @@ class Scratch:
         self.conf = opts
         self.visible = False
         self.just_created = True
+        self.clientInfo = {}
 
 
 class ScratchpadManager:
@@ -183,7 +184,16 @@ class ScratchpadManager:
         pid = "pid:%d" % item.pid
         if item.conf.get("animation"):
             # TODO: handle different directions
-            hyprctl(f"movewindowpixel 0 -{item.conf['offset']},{pid}")
+            offset = item.conf.get("offset")
+            if offset is None:
+                if "size" not in item.clientInfo:
+                    client = get_client_by_class(item.conf["class"])
+                    assert client
+                    item.clientInfo.update(client)
+
+                offset = int(1.3 * item.clientInfo["size"][1])
+
+            hyprctl(f"movewindowpixel 0 -{offset},{pid}")
             await asyncio.sleep(0.2)
         hyprctl(f"movetoworkspacesilent special,{pid}")
 
@@ -204,6 +214,7 @@ class ScratchpadManager:
         assert monitor
         client = get_client_by_class(item.conf["class"])
         assert client
+        item.clientInfo.update(client)
         mon_x = monitor["x"]
         mon_y = monitor["y"]
         mon_width = monitor["width"]
