@@ -328,6 +328,8 @@ class ScratchpadManager:
             fn = getattr(self, "_animation_%s" % animation_type)
             fn(monitor, item.clientInfo, pid, margin)
 
+        # FIXME: pin doesn't always work
+        # hyprctl(f"pin {pid}")
         hyprctl(f"focuswindow {pid}")
         await asyncio.sleep(0.2)
         self.transitioning_scratches.discard(uid)
