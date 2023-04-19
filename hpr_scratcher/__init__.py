@@ -8,12 +8,12 @@ import os
 
 DEBUG = os.environ.get("DEBUG", False)
 
-MARGIN = 60  # TODO take it from JSON config
 HYPRCTL = f'/tmp/hypr/{ os.environ["HYPRLAND_INSTANCE_SIGNATURE"] }/.socket.sock'
 EVENTS = f'/tmp/hypr/{ os.environ["HYPRLAND_INSTANCE_SIGNATURE"] }/.socket2.sock'
 CONTROL = f'/tmp/hypr/{ os.environ["HYPRLAND_INSTANCE_SIGNATURE"] }/.scratchpads.sock'
 
 CONFIG_FILE = "~/.config/hypr/scratchpads.json"
+DEFAULT_MARGIN = 60
 
 
 async def hyprctlJSON(command):
@@ -335,7 +335,7 @@ class ScratchpadManager:
         self.transitioning_scratches.add(uid)
         await hyprctl(f"movetoworkspacesilent {wrkspc},{pid}")
         if animation_type:
-            margin = item.conf.get("margin", MARGIN)
+            margin = item.conf.get("margin", DEFAULT_MARGIN)
             fn = getattr(self, "_animation_%s" % animation_type)
             await fn(monitor, item.clientInfo, pid, margin)
 
