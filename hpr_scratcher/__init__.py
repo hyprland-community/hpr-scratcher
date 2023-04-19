@@ -194,8 +194,11 @@ class ScratchpadManager:
                 offset = int(1.3 * item.clientInfo["size"][1])
 
             hyprctl(f"movewindowpixel 0 -{offset},{pid}")
+            if uid in self.transitioning_scratches:
+                return  # abort sequence
             await asyncio.sleep(0.2)
-        hyprctl(f"movetoworkspacesilent special,{pid}")
+        if uid not in self.transitioning_scratches:
+            hyprctl(f"movetoworkspacesilent special,{pid}")
 
     async def run_show(self, uid, force=False):
         uid = uid.strip()

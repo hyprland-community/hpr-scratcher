@@ -107,7 +107,6 @@ allow to hide the window when the focus is lost when set to "hide"
 # TODO
 
 - Make the margin/padding configurable per app
-- Better handling of fast repetitions
 - Allow different "poles" for scratchpads instead of always sliding from the top
 - Allow auto-restart of applications (if closed)
   - Allow closing the app on unfocus
