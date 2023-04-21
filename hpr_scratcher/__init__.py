@@ -419,12 +419,21 @@ class ScratchpadManager:
             async with self.server:
                 await self.server.serve_forever()
         finally:
-            for scratch in self.scratches:
-                proc = self.procs[scratch]
+
+            async def die_in_piece(scratch: Scratch):
+                proc = self.procs[scratch.uid]
                 proc.terminate()
-                await asyncio.sleep(0.1)
-                proc.kill()
+                for n in range(10):
+                    if not scratch.isAlive():
+                        break
+                    await asyncio.sleep(0.1)
+                if scratch.isAlive():
+                    proc.kill()
                 proc.wait()
+
+            await asyncio.gather(
+                *(die_in_piece(scratch) for scratch in self.scratches.values())
+            )
 
     async def run(self):
         await asyncio.gather(
