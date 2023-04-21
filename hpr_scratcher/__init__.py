@@ -62,11 +62,25 @@ class Scratch:
         self.visible = False
         self.just_created = True
         self.clientInfo = {}
-        self.scratches = {}
+
+    def isAlive(self):
+        path = f"/proc/{self.pid}"
+        if os.path.exists(path):
+            for line in open(os.path.join(path, "status"), "r").readlines():
+                if line.startswith("State"):
+                    state = line.split()[1]
+                    return state in "RSDTt"  # not "Z (zombie)"or "X (dead)"
+        return False
+
+    def reset(self, pid: int):
+        self.pid = pid
+        self.visible = False
+        self.just_created = True
+        self.clientInfo = {}
 
     @property
-    def address(self):
-        return self.clientInfo.get("address", "")[2:]
+    def address(self) -> str:
+        return str(self.clientInfo.get("address", ""))[2:]
 
     async def updateClientInfo(self, clientInfo=None):
         if clientInfo is None:
@@ -85,11 +99,8 @@ class ScratchpadManager:
         self.scratches = {}
         self.transitioning_scratches = set()
         self.startedAt = time.time()
+        self._respawned_scratches = set()
         self.load_config()
-
-    @property
-    def is_starting(self):
-        return time.time() - self.startedAt < 10
 
     def load_config(self):
         config = json.loads(
@@ -114,20 +125,27 @@ class ScratchpadManager:
         self.scratches_by_address = {}
         self.scratches_by_pid = {}
 
+    def start_scratch_command(self, name: str):
+        self._respawned_scratches.add(name)
+        scratch = self.scratches[name]
+        old_pid = self.procs[name].pid if name in self.procs else 0
+        self.procs[name] = subprocess.Popen(
+            scratch.conf["command"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            shell=True,
+        )
+        pid = self.procs[name].pid
+        self.scratches[name].reset(pid)
+        self.scratches_by_pid[self.procs[name].pid] = scratch
+        if old_pid:
+            del self.scratches_by_pid[old_pid]
+
     def load_clients(self):
-        self.procs = {
-            name: subprocess.Popen(
-                scratch.conf["command"],
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                shell=True,
-            )
-            for name, scratch in self.scratches.items()
-        }
-        for name, proc in self.procs.items():
-            self.scratches[name].pid = proc.pid
-            self.scratches_by_pid[proc.pid] = self.scratches[name]
+        self.procs = {}
+        for name in self.scratches:
+            self.start_scratch_command(name)
 
     # event handlers:
 
@@ -188,10 +206,11 @@ class ScratchpadManager:
         addr, wrkspc, kls, title = params.split(",", 3)
         if wrkspc == "special":
             item = self.scratches_by_address.get(addr)
-            if not item and self.is_starting:
+            if not item and self._respawned_scratches:
                 await self.updateScratchInfo()
                 item = self.scratches_by_address.get(addr)
             if item and item.just_created:
+                self._respawned_scratches.discard(item.uid)
                 await self.run_hide(item.uid, force=True)
                 item.just_created = False
 
@@ -320,6 +339,13 @@ class ScratchpadManager:
         if item.visible and not force:
             print(f"{uid} is already visible")
             return
+
+        if not item.isAlive():
+            print(f"{uid} is not running, restarting...")
+            self.procs[uid].kill()
+            self.start_scratch_command(uid)
+            while uid in self._respawned_scratches:
+                await asyncio.sleep(0.05)
 
         item.visible = True
         monitor = await get_focused_monitor_props()

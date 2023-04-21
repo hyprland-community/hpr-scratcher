@@ -102,6 +102,7 @@ number of pixels for the margin
 
 - animation names are case-insensitive now
 - drop `hyprctl` dependency
+- auto-restarts applications when needed
 
 # 0.5.0
 
@@ -138,7 +139,6 @@ number of pixels for the margin
 
 - first version, close to no options
 
-# TODO
+# Ideas / backlog
 
-- Allow auto-restart of applications (if closed)
-  - Allow closing the app on unfocus
+- Allow closing the app on unfocus
