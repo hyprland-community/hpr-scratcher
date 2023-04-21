@@ -281,7 +281,7 @@ class ScratchpadManager:
 
             if uid in self.transitioning_scratches:
                 return  # abort sequence
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(0.2)  # await for animation to finish
         if uid not in self.transitioning_scratches:
             await hyprctl(f"movetoworkspacesilent special,{pid}")
 
@@ -368,7 +368,7 @@ class ScratchpadManager:
         # FIXME: pin doesn't always work
         # await hyprctl(f"pin {pid}")
         await hyprctl(f"focuswindow {pid}")
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.2)  # ensure some time for events to propagate
         self.transitioning_scratches.discard(uid)
 
     # Async loops & handlers (dispatchers):
