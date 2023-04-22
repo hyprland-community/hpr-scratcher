@@ -98,7 +98,7 @@ number of pixels for the margin
 
 # Changelog
 
-# WIP
+# 0.6.0
 
 - animation names are case-insensitive now
 - drop `hyprctl` dependency
@@ -138,7 +138,3 @@ number of pixels for the margin
 # 0.1.0
 
 - first version, close to no options
-
-# Ideas / backlog
-
-- Allow closing the app on unfocus
