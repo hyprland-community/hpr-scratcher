@@ -1,3 +1,5 @@
+If you like to write your own extensions or get more features, you may want to check out https://github.com/fdev31/pyprland
+
 # Installation
 
 ```
