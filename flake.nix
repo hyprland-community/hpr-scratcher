@@ -1,7 +1,6 @@
 {
   description = "hpr_scratcher nix flake";
 
-  inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   inputs.poetry2nix = {
     url = "github:nix-community/poetry2nix";
@@ -11,21 +10,74 @@
   outputs = {
     self,
     nixpkgs,
-    flake-utils,
     poetry2nix,
-  }:
-    flake-utils.lib.eachDefaultSystem (system: let
-      # see https://github.com/nix-community/poetry2nix/tree/master#api for more functions and examples.
-      inherit (poetry2nix.legacyPackages.${system}) mkPoetryApplication;
-      pkgs = nixpkgs.legacyPackages.${system};
+  }: let
+    inherit (nixpkgs) lib;
+    genSystems = lib.genAttrs ["x86_64-linux" "aarch64-linux"];
+    pkgsFor = system:
+      import nixpkgs {
+        inherit system;
+        overlays = [
+          self.overlays.default
+        ];
+      };
+  in {
+    packages = genSystems (system: let
+      pkgs = pkgsFor system;
+    in
+      (self.overlays.default pkgs pkgs)
+      // {
+        default = self.packages.${system}.hpr_scratcher;
+      });
+    overlays.default = _: prev: let
+      inherit (poetry2nix.legacyPackages.${prev.hostPlatform.system}) mkPoetryApplication;
     in {
-      packages = {
-        myapp = mkPoetryApplication {projectDir = self;};
-        default = self.packages.${system}.myapp;
+      hpr_scratcher = mkPoetryApplication {projectDir = self;};
+    };
+    apps = genSystems (system: let
+      pkgs = pkgsFor system;
+    in rec {
+      default = {
+        type = "app";
+        program = "${pkgs.hpr_scratcher}/bin/hpr-scratcher";
       };
-
-      devShells.default = pkgs.mkShell {
-        packages = [poetry2nix.packages.${system}.poetry];
-      };
+      hpr_scratcher = default;
     });
+    devShells.default = genSystems (system: let
+      pkgs = pkgsFor system;
+    in
+      pkgs.mkShell {
+        packages = [poetry2nix.packages.${system}.poetry];
+      });
+    homeManagerModules.default = {
+      config,
+      lib,
+      pkgs,
+      ...
+    }: let
+      cfg = config.programs.hpr_scratcher;
+      defaultPkg = self.packages.${pkgs.hostPlatform.system}.hpr_scratcher;
+      jsonFormat = pkgs.formats.json {};
+    in {
+      options.programs.hpr_scratcher = {
+        enable = lib.mkEnableOption "hpr_scratcher scratchpad manager";
+        package = lib.mkOption {
+          type = with lib.types; package;
+          default = defaultPkg;
+          description = "The package to use.";
+        };
+        scratchpads = lib.mkOption {
+          type = lib.types.attrsOf (lib.types.attrsOf lib.types.anything);
+          default = {};
+          description = "Scratchpads to use";
+        };
+      };
+      config = lib.mkIf cfg.enable {
+        home.packages = [cfg.package];
+        xdg.configFile."hypr/scratchpads.json" = lib.mkIf (cfg.scratchpads != "") {
+          source = jsonFormat.generate "hpr_scratcher-scratchpads" cfg.scratchpads;
+        };
+      };
+    };
+  };
 }
