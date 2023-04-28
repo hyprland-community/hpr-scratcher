@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "hpr-scratcher"
-version = "0.6.0"
+version = "0.6.1"
 description = "A scratchpad manager for hyprland"
 authors = ["fdev31 <fdev31@gmail.com>"]
 license = "MIT"
