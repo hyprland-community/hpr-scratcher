@@ -308,15 +308,17 @@ class ScratchpadManager:
         )
 
     async def _animation_fromleft(self, monitor, client, client_uid, margin):
+        mon_x = monitor["x"]
         mon_y = monitor["y"]
         mon_height = monitor["height"]
 
         client_height = client["size"][1]
         margin_y = int((mon_height - client_height) / 2) + mon_y
 
-        await hyprctl(f"movewindowpixel exact {margin} {margin_y},{client_uid}")
+        await hyprctl(f"movewindowpixel exact {margin + mon_x} {margin_y},{client_uid}")
 
     async def _animation_fromright(self, monitor, client, client_uid, margin):
+        mon_x = monitor["x"]
         mon_y = monitor["y"]
         mon_width = monitor["width"]
         mon_height = monitor["height"]
@@ -325,7 +327,7 @@ class ScratchpadManager:
         client_height = client["size"][1]
         margin_y = int((mon_height - client_height) / 2) + mon_y
         await hyprctl(
-            f"movewindowpixel exact {mon_width - client_width - margin} {margin_y},{client_uid}"
+            f"movewindowpixel exact {mon_width - client_width - margin + mon_x} {margin_y},{client_uid}"
         )
 
     async def run_show(self, uid, force=False):
