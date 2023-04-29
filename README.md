@@ -1,4 +1,8 @@
-If you like to write your own extensions or get more features, you may want to check out https://github.com/fdev31/pyprland
+# CHECK https://github.com/fdev31/pyprland for more maintained code
+
+The goal of this project was to keep it single file. I'm now using **pyprland** which is doing the same and more and I'm not maintaining _hpr-scratcher_ anymore.
+Please move to _pyprland_ if you are not interested in the single file feature.
+The configuration file is compatible, just add your hpr-scratcher configuration under the "scratchpad" JSON key.
 
 # Installation
 
