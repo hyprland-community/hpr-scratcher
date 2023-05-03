@@ -58,6 +58,22 @@ Then in $HOME/.config/hypr/scratchpads.json add:
 
 And you'll be able to toggle pavucontrol with MOD + V.
 
+# Nix / Home Manager
+
+1. Add the flake input `hpr-scratcher.url = "github:hyprland-community/hpr-scratcher?dir=nix";`
+2. Add the home manager module `inputs.hpr-scratcher.homeManagerModules.default`
+3. Enable it `programs.hpr-scratcher.enable = true;` (Also adds it to your config, no need to add `exec-once`)
+4. Configure it `programs.hpr-scratcher.scratchpads = {};` (same as `scratchpads.json`, but in nix)
+5. Optionally use it for binds
+```nix
+{
+    binds = {
+        term = { mods = "SUPER"; key = "T"; type = "show"; };
+    };
+}
+```
+6. Add window rules if you need them, they not manageed by the hm module
+
 ## Command-line options
 
 - `reload` : reloads the configuration file

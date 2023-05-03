@@ -71,12 +71,21 @@
           default = {};
           description = "Scratchpads to use";
         };
+        binds = lib.mkOption {
+          type = lib.types.attrsOf (lib.types.attrsOf lib.types.anything);
+          default = {};
+          description = "Binds to autogenerate";
+        };
       };
       config = lib.mkIf cfg.enable {
         home.packages = [cfg.package];
         xdg.configFile."hypr/scratchpads.json" = lib.mkIf (cfg.scratchpads != "") {
           source = jsonFormat.generate "hpr_scratcher-scratchpads" cfg.scratchpads;
         };
+        wayland.windowManager.hyprland.extraConfig = let
+          binds = lib.attrsets.mapAttrsToList (name: x: "bind=${x.mods},${x.key},exec,${cfg.package} ${x.type} ${name}") cfg.binds;
+          binds_str = builtins.concatStringsSep "\n" binds;
+        in "exec-once=${cfg.package}\n${binds_str}";
       };
     };
   };
