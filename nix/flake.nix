@@ -32,7 +32,10 @@
     overlays.default = _: prev: let
       inherit (poetry2nix.legacyPackages.${prev.hostPlatform.system}) mkPoetryApplication;
     in {
-      hpr_scratcher = mkPoetryApplication {projectDir = self;};
+      hpr_scratcher = mkPoetryApplication {
+        projectDir = self;
+        poetrylock = ../poetry.lock;
+      };
     };
     apps = genSystems (system: let
       pkgs = pkgsFor system;
